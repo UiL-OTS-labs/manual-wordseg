@@ -27,6 +27,19 @@ Block test_block
         {
             // Randomize test items table.
             // if (shuffle_test_items() != OK) terminate;
+            control.button_box.disable_buttons();
+            control.button_box.enable_button(
+                    int(BUTTON_LEFT),
+                    EVENT_STOP_LOOKING
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_LOWER),
+                    EVENT_START_ATTENTION
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_RIGHT),
+                    EVENT_START_LOOKING
+                    );
 
             num_cycles = test_items[selected_group].size;
 
@@ -56,6 +69,8 @@ Block test_block
         on_event:exit()
         {
             test_page.cleanup();
+
+            control.button_box.disable_buttons();
 
             eyetracker.abort();
             eyetracker.close_data_file();
