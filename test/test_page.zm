@@ -246,12 +246,17 @@ Page test_page
 
         on_event:start()
         {
-            eyetracker.print_to_data_file("SOUND ON " + sound); 
+            eyetracker.print_to_data_file("SOUND ON " + sound);
+
+            control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
+            control.show_speaker_icon(FRONT_SIDE);
         }
 
         on_event:finish()
         {
             eyetracker.print_to_data_file("SOUND OFF " + sound);
+            
+            control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
             
             time play_time = finish_time; 
             play_time += interval(phase);
@@ -385,6 +390,7 @@ Page test_page
         etstarted = false;
         sound_playback2.abort();
         auditory_stimulus.abort();
+        control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
 
         signal_target(msgid);   // tell caller we're done
         target = null;
