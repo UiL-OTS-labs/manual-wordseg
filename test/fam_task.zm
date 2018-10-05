@@ -167,13 +167,13 @@ Block fam_block
                 output.trialnum = familiarization.cycle + 1;
                 output.number = item.number;
                 output.type = item.type;
-                output.cumlt = int(test_page.response.cumlt);
-                output.cumnlt = int(test_page.response.cumnlt);
+                output.cumlt = int(test_page.eye_response.cumlt);
+                output.cumnlt = int(test_page.eye_response.cumnlt);
                 // add looking + not looking time to stimulus, since we 
                 // are interested in how long the infant has been listing.
                 cumulative_times[item.type] +=
-                    (test_page.response.cumlt + test_page.response.cumnlt);
-                output.lookedaway = test_page.response.lookedaway;
+                    (test_page.eye_response.cumlt + test_page.eye_response.cumnlt);
+                output.lookedaway = test_page.eye_response.lookedaway;
                 output.cumlt_s1 = cumulative_times[get_item_type(fam_items, 0)];
                 output.cumlt_s2 = cumulative_times[get_item_type(fam_items, 1)];
                 fam_output_append(output);

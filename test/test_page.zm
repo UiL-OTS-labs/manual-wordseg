@@ -30,12 +30,25 @@ Page test_page
     ExpPhase    phase;          // Indicates in which phase we are.
     bool        etstarted;      // whether or not eye-tracking has started
 
+    // Pressing the left button on the button box starts this timer
+    // if the timer expires the trial will be aborted.
+    Timer abort_trial_timer
+    {
+        on_event:expire()
+        {
+            man_response.process_hit(event_time, EVENT_STOP_TIMER);
+        }
+    }
 
     init()
     {
         fill_pattern_color = TEST_PAGE_COLOR;
     }
 
+    on_event:message()
+    {
+        man_response.process_hit(event_time, message_arg);
+    }
 
     on_event:key_press()
     {
@@ -82,7 +95,7 @@ Page test_page
                 time audonsettime = auditory_stimulus.play(start_time, phase);
 
                 // Enable gaze monitoring at onset of first auditory stimulus.
-                response.start(audonsettime);
+                eye_response.start(audonsettime);
             }
 
             ImageShape attention
@@ -263,7 +276,7 @@ Page test_page
 
             // MD commented away, don't understand the interval phase
             //response.stop(expected_finish_time + interval(phase));
-            response.stop(finish_time);
+            eye_response.stop(finish_time);
         }
 
         time play(time t, ExpPhase p, int index = 0)
@@ -299,7 +312,79 @@ Page test_page
         }
     }
 
-    Response response
+    // Handles the responses from the button box
+    Response man_response
+    {
+        bool    is_looking;
+        time    lookstart;
+        time    nolookstart;
+        dur     cumlt;
+        dur     cumnlt;
+        int     nlookaways;
+        int     nlooks;
+
+        on_event:start()
+        {
+            clear();
+            lookstart = event_time;
+            // assume the child is looking.
+            is_looking = true;
+        }
+
+        void clear()
+        {
+            is_looking  = true;
+            lookstart   = time(0);
+            nolookstart = time(0);
+            cumlt       = 0ms;
+            cumnlt      = 0ms;
+            nlookaways  = 0;
+            nlooks      = 1; // The infant is always looking at the start
+                             // of the trial.
+        }
+
+        void process_hit(time t, int event)
+        {
+            HitType validity = hit(t);
+            //println("Process hit: " + string(validity) + " " + event);
+            
+            if (validity == HIT_VALID) {
+                if (event == EVENT_STOP_LOOKING) { // start abort timer
+                    if (!is_looking)
+                        return; // ignore, because we weren't looking.
+                    is_looking = false;
+                    nolookstart = t;
+                    cumlt += (t - lookstart);
+
+                    abort_trial_timer.start(t + MAX_LOOK_AWAY_DURATION);
+                    control.stop_clock(t);
+                    nlookaways++;
+                }
+                else if (event == EVENT_START_LOOKING) {
+                    if(is_looking)
+                        return; // ignore, because we already were looking.
+                    is_looking = true;
+                    lookstart = t;
+                    cumnlt += (t - nolookstart);
+
+                    control.start_clock(t);
+                    abort_trial_timer.abort();
+                    nlooks++;
+                }
+                else if (event == EVENT_STOP_TIMER) {
+                    if (is_looking)
+                        cumlt += (t - lookstart);
+                    else
+                        cumnlt+= (t - nolookstart);
+
+                    // abort trial
+                    done(CONTINUE);
+                }
+            }
+        }
+    }
+
+    Response eye_response
     {
         bool    looking;        // true while looking
         time    lookstart;      // looking state start time
@@ -363,8 +448,8 @@ Page test_page
                 }
                 curnlt = t - nolookstart;				
 
-                if (MAX_LOOKAWAY_DURATION > 0ms && 
-                        curnlt >= MAX_LOOKAWAY_DURATION)
+                if (MAX_LOOK_AWAY_DURATION > 0ms && 
+                        curnlt >= MAX_LOOK_AWAY_DURATION)
                 {
                     lookedaway = true;
                     stop();
@@ -468,7 +553,8 @@ Page test_page
         tref = prepare_trial_start(tref);
 
         // Reset response data.
-        response.clear();
+        eye_response.clear();
+        man_response.clear();
 
         // Start attention getter in test phase and
         // first trial of familiarization phase.

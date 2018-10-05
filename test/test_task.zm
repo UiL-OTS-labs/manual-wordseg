@@ -125,9 +125,9 @@ Block test_block
                 output.trialnum = test.cycle + 1;
                 output.number = item.number;
                 output.type = item.type;
-                output.cumlt = int(test_page.response.cumlt);
-                output.cumnlt = int(test_page.response.cumnlt);
-                output.lookedaway = test_page.response.lookedaway;
+                output.cumlt = int(test_page.eye_response.cumlt);
+                output.cumnlt = int(test_page.eye_response.cumnlt);
+                output.lookedaway = test_page.eye_response.lookedaway;
                 test_output_append(output);
 
                 // Add end of trial message.
