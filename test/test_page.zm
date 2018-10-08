@@ -96,6 +96,8 @@ Page test_page
 
                 // Enable gaze monitoring at onset of first auditory stimulus.
                 eye_response.start(audonsettime);
+                man_response.start(audonsettime);
+                control.release_clock(audonsettime);
             }
 
             ImageShape attention
@@ -372,6 +374,7 @@ Page test_page
                     nlooks++;
                 }
                 else if (event == EVENT_STOP_TIMER) {
+                    println("Stop timer");
                     if (is_looking)
                         cumlt += (t - lookstart);
                     else
@@ -475,6 +478,9 @@ Page test_page
         etstarted = false;
         sound_playback2.abort();
         auditory_stimulus.abort();
+
+        abort_trial_timer.abort();
+        control.erase_clock();
         control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
 
         signal_target(msgid);   // tell caller we're done
@@ -578,6 +584,12 @@ Page test_page
             layout.canvas.grid.load(fn);
             layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
         }
+
+        // Enable communication with control window and the clock.
+        control.target = this;
+        control.reset_clock();
+        control.begin_clock();
+        control.start_clock(tref);
         
         // Remember who to signal when the trial is over.
         target = caller;
