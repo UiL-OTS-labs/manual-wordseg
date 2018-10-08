@@ -27,6 +27,19 @@ Block test_block
         {
             // Randomize test items table.
             // if (shuffle_test_items() != OK) terminate;
+            control.button_box.disable_buttons();
+            control.button_box.enable_button(
+                    int(BUTTON_LEFT),
+                    EVENT_STOP_LOOKING
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_LOWER),
+                    EVENT_START_ATTENTION
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_RIGHT),
+                    EVENT_START_LOOKING
+                    );
 
             num_cycles = test_items[selected_group].size;
 
@@ -56,6 +69,8 @@ Block test_block
         on_event:exit()
         {
             test_page.cleanup();
+
+            control.button_box.disable_buttons();
 
             eyetracker.abort();
             eyetracker.close_data_file();
@@ -110,9 +125,9 @@ Block test_block
                 output.trialnum = test.cycle + 1;
                 output.number = item.number;
                 output.type = item.type;
-                output.cumlt = int(test_page.response.cumlt);
-                output.cumnlt = int(test_page.response.cumnlt);
-                output.lookedaway = test_page.response.lookedaway;
+                output.cumlt = int(test_page.eye_response.cumlt);
+                output.cumnlt = int(test_page.eye_response.cumnlt);
+                output.lookedaway = test_page.eye_response.lookedaway;
                 test_output_append(output);
 
                 // Add end of trial message.

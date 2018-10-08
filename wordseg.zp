@@ -52,9 +52,10 @@ HISTORY:
                 today.
 \******************************************************************************/
 
-requires 1.14;
+requires 1.16;
 
-import std_windows1;
+import response_box;
+import std_baby_windows_uil;
 import std_texts_en;
 import std_entry_page2;
 import std_exit_page2;
@@ -72,6 +73,9 @@ Experiment experiment
     on_event:entry()
     {
         show_test_windows();
+        if (control.button_box.open() != OK)
+            terminate "Unable to open the BeexyBox";
+        control.button_box.enable_button(1, CONTINUE);
     }
 
 
