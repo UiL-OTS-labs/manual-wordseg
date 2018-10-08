@@ -276,9 +276,8 @@ Page test_page
             time play_time = finish_time; 
             play_time += interval(phase);
 
-            // MD commented away, don't understand the interval phase
-            //response.stop(expected_finish_time + interval(phase));
-            eye_response.stop(finish_time);
+            // terminate the response and trial.
+            man_response.process_hit(event_time, EVENT_STOP_TIMER);
         }
 
         time play(time t, ExpPhase p, int index = 0)
@@ -348,7 +347,6 @@ Page test_page
         void process_hit(time t, int event)
         {
             HitType validity = hit(t);
-            //println("Process hit: " + string(validity) + " " + event);
             
             if (validity == HIT_VALID) {
                 if (event == EVENT_STOP_LOOKING) { // start abort timer
@@ -374,12 +372,16 @@ Page test_page
                     nlooks++;
                 }
                 else if (event == EVENT_STOP_TIMER) {
-                    println("Stop timer");
+                    // This case aborts 
                     if (is_looking)
                         cumlt += (t - lookstart);
                     else
                         cumnlt+= (t - nolookstart);
 
+                    // Make sure other hits are invalid.
+                    ignore_remaining_hits();
+                    // stop response for eye_movement
+                    eye_response.stop();
                     // abort trial
                     done(CONTINUE);
                 }
@@ -450,13 +452,6 @@ Page test_page
                     lookstart = time(0);
                 }
                 curnlt = t - nolookstart;				
-
-                if (MAX_LOOK_AWAY_DURATION > 0ms && 
-                        curnlt >= MAX_LOOK_AWAY_DURATION)
-                {
-                    lookedaway = true;
-                    stop();
-                }
             }
         }		
 
@@ -465,7 +460,6 @@ Page test_page
             cumlt   += curlt;
             cumnlt  += curnlt;
             eyetracker.stop_tracking();
-            done(CONTINUE);
         }
     }
 
