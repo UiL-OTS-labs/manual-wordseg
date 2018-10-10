@@ -21,7 +21,6 @@ Block test_block
     Block test
     {
         TestItem        item;   // current item
-        TestOutput      output; // current output table row
 
         on_event:entry()
         {
@@ -119,17 +118,6 @@ Block test_block
 
             on_event:exit()
             {
-                // Add new row to test output table.
-                TestOutput output;
-                output.phase = TEST_PHASE;
-                output.trialnum = test.cycle + 1;
-                output.number = item.number;
-                output.type = item.type;
-                output.cumlt = int(test_page.eye_response.cumlt);
-                output.cumnlt = int(test_page.eye_response.cumnlt);
-                output.lookedaway = test_page.eye_response.lookedaway;
-                test_output_append(output);
-
                 // Add end of trial message.
                 eyetracker.print_to_data_file("trialend " +
                     string(item.number) + " " +
@@ -139,6 +127,26 @@ Block test_block
 
                 // Clear eye-tracker status line.
                 eyetracker.send_command("record_status_message ''");
+
+                // Add new row to test output table.
+                TestOutput eoutput;
+                eoutput.phase        = TEST_PHASE;
+                eoutput.trialnum     = test.cycle + 1;
+                eoutput.number       = item.number;
+                eoutput.type         = item.type;
+                eoutput.cumlt        = int(test_page.eye_response.cumlt);
+                eoutput.cumnlt       = int(test_page.eye_response.cumnlt);
+                eoutput.lookedaway   = test_page.eye_response.lookedaway;
+                output_append(test_eye_output, eoutput);
+                
+                TestOutput moutput;
+                moutput.phase       = FAM_PHASE;
+                moutput.trialnum    = test.cycle + 1;
+                moutput.number      = item.number;
+                moutput.type        = item.type;
+                moutput.cumlt       = int(test_page.man_response.cumlt);
+                moutput.cumnlt      = int(test_page.man_response.cumnlt);
+                output_append(test_man_output, moutput);
             }
         }
     }

@@ -22,6 +22,13 @@ HISTORY:
 
 color ATTENTION_BACK_COLOR = rgb:BAD6EB; // background color of the attention
 
+enum looking_state {
+    STATE_INITIALIZED,
+    STATE_LOOKING,
+    STATE_NOT_LOOKING
+};
+
+
 Page test_page
 {
     TestItem    item;           // trial control parameters
@@ -29,6 +36,7 @@ Page test_page
     int         next = 0;       // next familiarization image
     ExpPhase    phase;          // Indicates in which phase we are.
     bool        etstarted;      // whether or not eye-tracking has started
+    dur         sample_dur;     // Duration of a sample
 
     // Pressing the left button on the button box starts this timer
     // if the timer expires the trial will be aborted.
@@ -133,18 +141,6 @@ Page test_page
                     sound_playback2.abort();
                 }
             }
-
-//            Timer update_grid
-//            {
-//                on_event:expire()
-//                {
-//                    string fn = get_next_cboard();
-//                    string new_fn = stimuli_dir() + "images/" + fn;
-//                    grid.image = new_fn;
-//
-//                    start(event_time + 1s);
-//                }
-//            }
 
             ImageShape grid
             {
@@ -401,6 +397,10 @@ Page test_page
         dur     cumlt;          // cumulative looking time (duration)
         dur     cumnlt;         // cumulative not-looking time (duration)
         bool    lookedaway;     // if set, infant looked away too long
+        int     looks;          // num times participant looks at target
+        int     lookaways;      // num times participant looks away from target.
+
+        looking_state  look_state;
 
         void clear()
         {
@@ -412,9 +412,34 @@ Page test_page
             cumlt       = 0ms;
             cumnlt      = 0ms;
             lookedaway  = false;
+            look_state  = STATE_INITIALIZED;
+            looks       = 0;
+            lookaways   = 0;
         }
 
-        void check_gaze(real xeye, real yeye, time t, bool fixend=false)
+        void process_hit(time t, bool looking)
+        {
+            HitType validity = hit(t);
+            if (validity == HIT_VALID) {
+                if (looking) {
+                    if (look_state != STATE_LOOKING)
+                    {
+                        // TODO inc num looks;
+                        look_state = STATE_LOOKING;
+                    }
+                    cumlt += sample_dur;
+                }
+                else {
+                    if (look_state != STATE_LOOKING) {
+                        // TODO inc NUM not lookings
+                        look_state = STATE_NOT_LOOKING;
+                    }
+                    cumnlt += sample_dur;
+                }
+            }
+        }
+
+        void check_gaze(real xeye, real yeye, time t)
         {
             // Passed eye positions are relative to the test window.
 
@@ -422,43 +447,42 @@ Page test_page
             xeye -= layout.canvas.x;
             yeye -= layout.canvas.y;
 
-            if (fixend || 
-                    xeye < 0 || xeye >= layout.canvas.width ||
-                    yeye < 0 || yeye >= layout.canvas.height
-                    ) 
+            if (xeye < 0 || xeye >= layout.canvas.width ||
+                yeye < 0 || yeye >= layout.canvas.height
+                ) 
                 looking = false;
             else
                 looking = true;
 
-            // Evaluate looking during the response period.
-            if (looking)
-            {
-                if (lookstart == time(0)) 
-                {
-                    cumnlt += curnlt;	
-                    curnlt = 0ms;
-                    lookstart = t;
-                    nolookstart = time(0);
-                }
-                curlt = t - lookstart;
-            }
-            else
-            {
-                if (nolookstart == time(0)) 
-                {
-                    cumlt += curlt;
-                    curlt = 0ms;
-                    nolookstart = t;
-                    lookstart = time(0);
-                }
-                curnlt = t - nolookstart;				
-            }
-        }		
+            process_hit(t, looking);
+
+//            // Evaluate looking during the response period.
+//            if (looking)
+//            {
+//                if (lookstart == time(0)) 
+//                {
+//                    cumnlt += curnlt;	
+//                    curnlt = 0ms;
+//                    lookstart = t;
+//                    nolookstart = time(0);
+//                }
+//                curlt = t - lookstart;
+//            }
+//            else
+//            {
+//                if (nolookstart == time(0)) 
+//                {
+//                    cumlt += curlt;
+//                    curlt = 0ms;
+//                    nolookstart = t;
+//                    lookstart = time(0);
+//                }
+//                curnlt = t - nolookstart;				
+//            }
+        }
 
         on_event:finish()
         {
-            cumlt   += curlt;
-            cumnlt  += curnlt;
             eyetracker.stop_tracking();
         }
     }
@@ -520,6 +544,8 @@ Page test_page
     // Performs preparatory work required before using this page.
     void setup(ExpPhase p)
     {
+        sample_dur = eyetracker.sampling_period;
+        println("sample_dur = " + sample_dur);
         phase = p;
     }
 
