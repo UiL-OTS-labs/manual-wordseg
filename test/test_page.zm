@@ -442,7 +442,6 @@ Page test_page
         void check_gaze(real xeye, real yeye, time t)
         {
             // Passed eye positions are relative to the test window.
-
             // Make eye coordinates relative to canvas.
             xeye -= layout.canvas.x;
             yeye -= layout.canvas.y;
@@ -455,35 +454,12 @@ Page test_page
                 looking = true;
 
             process_hit(t, looking);
-
-//            // Evaluate looking during the response period.
-//            if (looking)
-//            {
-//                if (lookstart == time(0)) 
-//                {
-//                    cumnlt += curnlt;	
-//                    curnlt = 0ms;
-//                    lookstart = t;
-//                    nolookstart = time(0);
-//                }
-//                curlt = t - lookstart;
-//            }
-//            else
-//            {
-//                if (nolookstart == time(0)) 
-//                {
-//                    cumlt += curlt;
-//                    curlt = 0ms;
-//                    nolookstart = t;
-//                    lookstart = time(0);
-//                }
-//                curnlt = t - nolookstart;				
-//            }
         }
 
         on_event:finish()
         {
             eyetracker.stop_tracking();
+            etstarted = false;
         }
     }
 
@@ -493,7 +469,6 @@ Page test_page
     {
         // Just in case; abort presentation if still active.
         layout.reset();
-        etstarted = false;
         sound_playback2.abort();
         auditory_stimulus.abort();
 
@@ -545,7 +520,6 @@ Page test_page
     void setup(ExpPhase p)
     {
         sample_dur = eyetracker.sampling_period;
-        println("sample_dur = " + sample_dur);
         phase = p;
     }
 
