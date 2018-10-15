@@ -72,7 +72,7 @@ const dur       MAX_LOOK_AWAY_DURATION          = 2000ms;
 const dur       ATTEN_STIM_DELAY                = 0ms;
 
 // Duration of the attention getter.
-const dur       ATTENTION_GETTER_DURATION       = 4000ms;
+const dur       ATTENTION_GETTER_DURATION       = -1; //infinite (Button dependant)
 
 // Duration between two successive checker board images.
 const dur       INTER_CBOARD_DUR                = 1s;
