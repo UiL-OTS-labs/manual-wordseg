@@ -75,7 +75,12 @@ Experiment experiment
         show_test_windows();
         if (control.button_box.open() != OK)
             terminate "Unable to open the BeexyBox";
+
         control.button_box.enable_button(1, CONTINUE);
+
+        // Maximize the control window in order to see the child properly
+        // in the obs video overlay.
+        ctrl_window.is_maximized = true;
     }
 
 
