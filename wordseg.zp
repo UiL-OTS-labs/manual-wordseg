@@ -73,7 +73,7 @@ Experiment experiment
     on_event:entry()
     {
         show_test_windows();
-        if (control.button_box.open() != OK)
+        if (control.button_box.open(BXY_DEVICE_TYPE_B, "B15017") != OK)
             terminate "Unable to open the BeexyBox";
 
         control.button_box.enable_button(1, CONTINUE);
