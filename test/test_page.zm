@@ -35,7 +35,7 @@ Page test_page
     string      sound;          // current sound file stub
     int         next = 0;       // next familiarization image
     ExpPhase    phase;          // Indicates in which phase we are.
-    bool        etstarted;      // whether or not eye-tracking has started
+    //bool        etstarted;      // whether or not eye-tracking has started
     dur         sample_dur;     // Duration of a sample
 
     // Pressing the left button on the button box starts this timer
@@ -48,6 +48,29 @@ Page test_page
         }
     }
 
+// Remove
+//
+//    // If the looking button is pressed this timer is activated from the
+//    // attention response. This timer can be canceled when the child
+//    // looks away to fast, also from the attention_response.
+//    Timer start_trial_timer
+//    {
+//        on_event:expire()
+//        {
+//            attention_response.abort();
+//
+//            time tref = layout.start_stimulus(expire_time + 16.667ms);
+//            sound_playback2.abort();
+//            auditory_stimulus.start(tref);
+//            
+//            // start eye tracker
+//            eyetracker.target = test_page;
+//            eyetracker.start_tracking();
+//
+//        }
+//    }
+
+
     init()
     {
         fill_pattern_color = TEST_PAGE_COLOR;
@@ -56,6 +79,7 @@ Page test_page
     on_event:message()
     {
         man_response.process_hit(event_time, message_arg);
+        attention_response.process_hit(event_time, message_arg);
     }
 
     on_event:key_press()
@@ -87,25 +111,11 @@ Page test_page
             on_event:start()
             {
                 // Let eye-tracker record eye-movement data. Will stop at end of trial.
-                if (!etstarted) { 
-                    eyetracker.target_page = test_page;
-                    eyetracker.target = test_page;
-                    eyetracker.start_tracking();
-                    etstarted = true; 
-                }
 
                 // Print start time to eyetracker data file.
                 int dt = int(now() - start_time);
                 eyetracker.print_to_data_file("SYNCTIME " + string(dt));
                 eyetracker.print_to_data_file(string(dt) + "DISPLAY ON");
-
-                // Start first auditory stimulus at visual stimulus onset.
-                time audonsettime = auditory_stimulus.play(start_time, phase);
-
-                // Enable gaze monitoring at onset of first auditory stimulus.
-                eye_response.start(audonsettime);
-                man_response.start(audonsettime);
-                control.release_clock(audonsettime);
             }
 
             ImageShape attention
@@ -129,10 +139,15 @@ Page test_page
 
                 on_event:start()
                 {
+                    // Insane number of repeats, if it would get to this
+                    // the experiment would probably be aborted.
+                    int num_repeats = 1000;
                     sound_playback2.play(
                         stimuli_dir() + "sounds/" + ATTENTION_SOUND1,
                         stimuli_dir() + "sounds/" + ATTENTION_SOUND2,
-                        event_time + 250ms, 250ms);
+                        event_time + 250ms, 250ms,
+                        num_repeats
+                        );
                     canvas.fill_pattern_color = ATTENTION_BACK_COLOR;
                 }
 
@@ -141,31 +156,24 @@ Page test_page
                     sound_playback2.abort();
                 }
             }
-
+            
             ImageShape grid
             {
-                real refresh_rate;
                 int  rounded_fps;
 
                 int  last_frame;
                 int  nth_frame;
 
-                //void load(string fn, int pos, bool fullsize = false)
                 on_event:init()
                 {
                     // center the grid
-                    width  = 800;
-                    height = 800;
+                    width  =  800;
+                    height =  800;
                     x      = -width/2;
                     y      = -height/2;
 
-                    refresh_rate = display_device.refresh_rate;
+                    real refresh_rate = display_device.refresh_rate;
                     rounded_fps = int(round(refresh_rate));
-                }
-
-                void load(string fn)
-                {
-                    image = fn;
                 }
 
                 on_event:pre_update()
@@ -179,13 +187,16 @@ Page test_page
                     if (nth_frame >= rounded_fps) {
                         string fn = stimuli_dir() + "images/";
                         fn += get_next_cboard();
-                        load(fn);
+                        image = fn;
                         nth_frame -= rounded_fps;
                     }
                 }
 
                 on_event:start()
                 {
+                    println("Grid start");
+                    auditory_stimulus.play(now());
+                    attention.stop(event_time);
                     last_frame = 0;
                     nth_frame  = 0;
                     string fn = get_next_cboard();
@@ -207,36 +218,18 @@ Page test_page
             return canvas.attention.expected_finish_time;
         }
 
-        time start_stimulus_familiarization(time t)
+        // Starts the grid, the eyetracker and the manual and eye response.
+        // and the auditory stimuli.
+        time start_stimulus(time t)
         {
             // Prepare stimulus presentation objects.
-            canvas.grid.load(
-                    stimuli_dir() +
-                    "images/" +
-                    get_next_cboard()
-                    ); 
+            canvas.grid.image = stimuli_dir() + "images/" + get_next_cboard();
 
             // Start picture stimulus.
-            canvas.start(t);
+            canvas.grid.start(t);
 
             // Return stimulus onset time.
-            return canvas.expected_start_time;
-        }
-
-        time start_stimulus_test(time t)
-        {
-            // Prepare stimulus presentation objects.
-            canvas.grid.load(
-                    stimuli_dir() +
-                    "images/" +
-                    get_next_cboard()
-                    ); 
-
-            // Start picture stimulus.
-            canvas.start(t);
-
-            // Return stimulus onset time.
-            return canvas.expected_start_time;
+            return canvas.grid.expected_start_time;
         }
 
         void reset()
@@ -276,7 +269,7 @@ Page test_page
             man_response.process_hit(event_time, EVENT_STOP_TIMER);
         }
 
-        time play(time t, ExpPhase p, int index = 0)
+        time play(time t)
         {
             // Abort any previous sounds playing.
             abort();
@@ -284,6 +277,8 @@ Page test_page
 
             // Set up sound clip.
             playback.device = sound_output_device;
+
+            // Sound is setup in action
             clip.file = stimuli_dir() + "sounds/" + sound + ".wav";
 
             // Update status line on control window. Cleared in done() below.
@@ -326,6 +321,8 @@ Page test_page
             lookstart = event_time;
             // assume the child is looking.
             is_looking = true;
+            // Allow only one of the manual responses to be active.
+            attention_response.abort();
         }
 
         void clear()
@@ -380,6 +377,37 @@ Page test_page
                     eye_response.stop();
                     // abort trial
                     done(CONTINUE);
+                }
+            }
+        }
+    }
+
+    Response attention_response
+    {
+        void process_hit(time t, int event)
+        {
+            HitType validity = hit(t);
+
+            if (validity == HIT_VALID)
+            {
+                if (event == EVENT_START_LOOKING)
+                {
+                    time trialstart = t + ATTEN_STIM_DELAY;
+
+                    time gridon     = layout.start_stimulus(trialstart);
+                    // auditory_stimulus.play(gridon); would cancel chime_up and down
+                    eyetracker.start_tracking(gridon);
+                    man_response.start(gridon);
+                    eye_response.start(gridon);
+                }
+                else if (event == EVENT_STOP_LOOKING)
+                {
+                    //layout.full_abort();
+                    layout.canvas.grid.abort();
+                    eyetracker.abort();
+                    //auditory_stimulus.abort();
+                    man_response.abort();
+                    eye_response.abort();
                 }
             }
         }
@@ -459,7 +487,6 @@ Page test_page
         on_event:finish()
         {
             eyetracker.stop_tracking();
-            etstarted = false;
         }
     }
 
@@ -532,16 +559,10 @@ Page test_page
         sound_playback2.abort();
     }
 
-    time action_attention_grabber(time tref)
-    {
-        return layout.start_attention_getter(tref);
-    }
-
     // Starts a trial.
     void action(Object caller,
                 TestItem it,
                 time tref,
-                bool show_attention,
                 int count=-1
                 )
     {
@@ -558,34 +579,28 @@ Page test_page
 
         // Start attention getter in test phase and
         // first trial of familiarization phase.
-        time attenoffset;
-        if (show_attention)
-            attenoffset = layout.start_attention_getter(tref);
-        else 
-            attenoffset = tref;
+
+        layout.start_attention_getter(tref);
+        attention_response.start(tref);
+
+        eyetracker.target_page = this;
 
         // Start visual stimulus at attention getter offet + ATTEN_STIM_DELAY. 
         // Visual stimulus start event procedure will start
         // the audio stimulus and response period.
-        string fn = stimuli_dir() + "images/" + get_next_cboard();
-        if (phase == FAM_PHASE) {
-            layout.canvas.start(attenoffset + ATTEN_STIM_DELAY);
-            layout.canvas.grid.load(fn);
-            layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-        }
-        else {
-            layout.start_stimulus_test(attenoffset + ATTEN_STIM_DELAY);
-            layout.canvas.grid.load(fn);
-            layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-        }
+
+//        layout.start_stimulus(attenoffset + ATTEN_STIM_DELAY);
+//        layout.canvas.grid.load(fn);
+//        layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
 
         // Enable communication with control window and the clock.
         control.target = this;
-        control.reset_clock();
-        control.begin_clock();
-        control.start_clock(tref);
+//        control.reset_clock();
+//        control.begin_clock();
+//        control.start_clock(tref);
         
         // Remember who to signal when the trial is over.
         target = caller;
     }
 }
+

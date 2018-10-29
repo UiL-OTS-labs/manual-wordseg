@@ -110,7 +110,6 @@ Block test_block
                         this,
                         item,
                         reference_time,
-                        present_attention,
                         test.cycle
                         );
             }

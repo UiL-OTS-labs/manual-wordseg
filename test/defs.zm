@@ -69,10 +69,10 @@ const dur       FAM_INTERSTIMULUS_INTERVAL      = 250ms;
 const dur       MAX_LOOK_AWAY_DURATION          = 2000ms;
 
 // Delay from attention getter offset and visual stimulus onset.
-const dur       ATTEN_STIM_DELAY                = 0ms;
+const dur       ATTEN_STIM_DELAY                = 1s;
 
 // Duration of the attention getter.
-const dur       ATTENTION_GETTER_DURATION       = -1; //infinite (Button dependant)
+const dur       ATTENTION_GETTER_DURATION       = -1; //infinite (Button dependent)
 
 // Duration between two successive checker board images.
 const dur       INTER_CBOARD_DUR                = 1s;
