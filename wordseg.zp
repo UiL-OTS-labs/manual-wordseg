@@ -72,11 +72,18 @@ Experiment experiment
 {
     on_event:entry()
     {
+        bool open;
         show_test_windows();
         if (control.button_box.open(BXY_DEVICE_TYPE_B, "B15017") != OK)
-            terminate "Unable to open the BeexyBox";
+            open = true;
 
-        control.button_box.enable_button(1, CONTINUE);
+        if (!open) {
+            print_error("Trying to open fallback beexybox.\n");
+            if (control.button_box.open() != OK)
+                terminate "Unable to open a BeexyBox\n";
+            else
+                open = true;
+        }
 
         // Maximize the control window in order to see the child properly
         // in the obs video overlay.
@@ -99,8 +106,17 @@ Experiment experiment
     {
         on_event:entry()
         {
+            control.button_box.enable_all_buttons(CONTINUE);
+            control.enable_key(' ', CONTINUE);
+
             entry_page.add_image(stimuli_dir() + "images/bal.png");
             entry_page.action(this);
+        }
+
+        on_event:exit()
+        {
+            control.button_box.disable_buttons();
+            control.disable_keys();
         }
     }
 

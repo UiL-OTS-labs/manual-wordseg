@@ -143,18 +143,17 @@ Page control
 
     on_event:key_press()
     {
-        // See also ButtonBox object below.
         bool handled;
-//        if (input_modifiers == 0 && state >= CONTROL_RUNNING &&
-//            keymap.size > 0 && target != null)
-//        {
-//            int i = find_key(int(input_key));
-//            if (i >= 0)
-//            {
-//                signal_target(keymap[i].code);
-//                handled = true;
-//            }
-//        }
+        if (input_modifiers == 0 && state >= CONTROL_RUNNING &&
+            keymap.size > 0 && target != null)
+        {
+            int i = find_key(int(input_key));
+            if (i >= 0)
+            {
+                signal_target(keymap[i].code);
+                handled = true;
+            }
+        }
 
         if (!handled) handle_special_key(this, input_key, input_modifiers);
     }
