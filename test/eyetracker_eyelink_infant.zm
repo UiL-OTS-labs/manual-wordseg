@@ -239,7 +239,7 @@ EyeLinkEyeTracker eyetracker
             control.hide_gaze();
         }
 
-        test_page.response.check_gaze(gaze_left_x, gaze_left_y, gaze_time);
+        test_page.eye_response.check_gaze(gaze_left_x, gaze_left_y, gaze_time);
     }
 
 
@@ -251,7 +251,7 @@ EyeLinkEyeTracker eyetracker
             fixation_x / test_window1.width, 
             fixation_y / test_window1.height);
 
-//        test_page.response.check_gaze(fixation_x, fixation_y, 
+//        test_page.eye_response.check_gaze(fixation_x, fixation_y, 
 //            fixation_start_time);
     }
 
@@ -262,7 +262,7 @@ EyeLinkEyeTracker eyetracker
 
         control.hide_fixation();
 
-//        test_page.response.check_gaze(fixation_x, fixation_y, 
+//        test_page.eye_response.check_gaze(fixation_x, fixation_y, 
 //            fixation_end_time, true);
     }
 
@@ -275,7 +275,7 @@ EyeLinkEyeTracker eyetracker
             fixation_x / test_window1.width, 
             fixation_y / test_window1.height);
 
-//        test_page.response.check_gaze(fixation_x, fixation_y, 
+//        test_page.eye_response.check_gaze(fixation_x, fixation_y, 
 //            fixation_end_time);
     }
 

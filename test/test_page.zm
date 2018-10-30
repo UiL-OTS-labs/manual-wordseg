@@ -22,13 +22,53 @@ HISTORY:
 
 color ATTENTION_BACK_COLOR = rgb:BAD6EB; // background color of the attention
 
+enum looking_state {
+    STATE_INITIALIZED,
+    STATE_LOOKING,
+    STATE_NOT_LOOKING
+};
+
+
 Page test_page
 {
     TestItem    item;           // trial control parameters
     string      sound;          // current sound file stub
     int         next = 0;       // next familiarization image
     ExpPhase    phase;          // Indicates in which phase we are.
-    bool        etstarted;      // whether or not eye-tracking has started
+    //bool        etstarted;      // whether or not eye-tracking has started
+    dur         sample_dur;     // Duration of a sample
+
+    // Pressing the left button on the button box starts this timer
+    // if the timer expires the trial will be aborted.
+    Timer abort_trial_timer
+    {
+        on_event:expire()
+        {
+            man_response.process_hit(event_time, EVENT_STOP_TIMER);
+        }
+    }
+
+// Remove
+//
+//    // If the looking button is pressed this timer is activated from the
+//    // attention response. This timer can be canceled when the child
+//    // looks away to fast, also from the attention_response.
+//    Timer start_trial_timer
+//    {
+//        on_event:expire()
+//        {
+//            attention_response.abort();
+//
+//            time tref = layout.start_stimulus(expire_time + 16.667ms);
+//            sound_playback2.abort();
+//            auditory_stimulus.start(tref);
+//            
+//            // start eye tracker
+//            eyetracker.target = test_page;
+//            eyetracker.start_tracking();
+//
+//        }
+//    }
 
 
     init()
@@ -36,6 +76,11 @@ Page test_page
         fill_pattern_color = TEST_PAGE_COLOR;
     }
 
+    on_event:message()
+    {
+        man_response.process_hit(event_time, message_arg);
+        attention_response.process_hit(event_time, message_arg);
+    }
 
     on_event:key_press()
     {
@@ -66,23 +111,11 @@ Page test_page
             on_event:start()
             {
                 // Let eye-tracker record eye-movement data. Will stop at end of trial.
-                if (!etstarted) { 
-                    eyetracker.target_page = test_page;
-                    eyetracker.target = test_page;
-                    eyetracker.start_tracking();
-                    etstarted = true; 
-                }
 
                 // Print start time to eyetracker data file.
                 int dt = int(now() - start_time);
                 eyetracker.print_to_data_file("SYNCTIME " + string(dt));
                 eyetracker.print_to_data_file(string(dt) + "DISPLAY ON");
-
-                // Start first auditory stimulus at visual stimulus onset.
-                time audonsettime = auditory_stimulus.play(start_time, phase);
-
-                // Enable gaze monitoring at onset of first auditory stimulus.
-                response.start(audonsettime);
             }
 
             ImageShape attention
@@ -106,10 +139,15 @@ Page test_page
 
                 on_event:start()
                 {
+                    // Insane number of repeats, if it would get to this
+                    // the experiment would probably be aborted.
+                    int num_repeats = 1000;
                     sound_playback2.play(
                         stimuli_dir() + "sounds/" + ATTENTION_SOUND1,
                         stimuli_dir() + "sounds/" + ATTENTION_SOUND2,
-                        event_time + 250ms, 250ms);
+                        event_time + 250ms, 250ms,
+                        num_repeats
+                        );
                     canvas.fill_pattern_color = ATTENTION_BACK_COLOR;
                 }
 
@@ -118,43 +156,24 @@ Page test_page
                     sound_playback2.abort();
                 }
             }
-
-//            Timer update_grid
-//            {
-//                on_event:expire()
-//                {
-//                    string fn = get_next_cboard();
-//                    string new_fn = stimuli_dir() + "images/" + fn;
-//                    grid.image = new_fn;
-//
-//                    start(event_time + 1s);
-//                }
-//            }
-
+            
             ImageShape grid
             {
-                real refresh_rate;
                 int  rounded_fps;
 
                 int  last_frame;
                 int  nth_frame;
 
-                //void load(string fn, int pos, bool fullsize = false)
                 on_event:init()
                 {
                     // center the grid
-                    width  = 800;
-                    height = 800;
+                    width  =  800;
+                    height =  800;
                     x      = -width/2;
                     y      = -height/2;
 
-                    refresh_rate = display_device.refresh_rate;
+                    real refresh_rate = display_device.refresh_rate;
                     rounded_fps = int(round(refresh_rate));
-                }
-
-                void load(string fn)
-                {
-                    image = fn;
                 }
 
                 on_event:pre_update()
@@ -168,13 +187,16 @@ Page test_page
                     if (nth_frame >= rounded_fps) {
                         string fn = stimuli_dir() + "images/";
                         fn += get_next_cboard();
-                        load(fn);
+                        image = fn;
                         nth_frame -= rounded_fps;
                     }
                 }
 
                 on_event:start()
                 {
+                    println("Grid start");
+                    auditory_stimulus.play(now());
+                    attention.stop(event_time);
                     last_frame = 0;
                     nth_frame  = 0;
                     string fn = get_next_cboard();
@@ -196,36 +218,18 @@ Page test_page
             return canvas.attention.expected_finish_time;
         }
 
-        time start_stimulus_familiarization(time t)
+        // Starts the grid, the eyetracker and the manual and eye response.
+        // and the auditory stimuli.
+        time start_stimulus(time t)
         {
             // Prepare stimulus presentation objects.
-            canvas.grid.load(
-                    stimuli_dir() +
-                    "images/" +
-                    get_next_cboard()
-                    ); 
+            canvas.grid.image = stimuli_dir() + "images/" + get_next_cboard();
 
             // Start picture stimulus.
-            canvas.start(t);
+            canvas.grid.start(t);
 
             // Return stimulus onset time.
-            return canvas.expected_start_time;
-        }
-
-        time start_stimulus_test(time t)
-        {
-            // Prepare stimulus presentation objects.
-            canvas.grid.load(
-                    stimuli_dir() +
-                    "images/" +
-                    get_next_cboard()
-                    ); 
-
-            // Start picture stimulus.
-            canvas.start(t);
-
-            // Return stimulus onset time.
-            return canvas.expected_start_time;
+            return canvas.grid.expected_start_time;
         }
 
         void reset()
@@ -246,22 +250,26 @@ Page test_page
 
         on_event:start()
         {
-            eyetracker.print_to_data_file("SOUND ON " + sound); 
+            eyetracker.print_to_data_file("SOUND ON " + sound);
+
+            control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
+            control.show_speaker_icon(FRONT_SIDE);
         }
 
         on_event:finish()
         {
             eyetracker.print_to_data_file("SOUND OFF " + sound);
             
+            control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
+            
             time play_time = finish_time; 
             play_time += interval(phase);
 
-            // MD commented away, don't understand the interval phase
-            //response.stop(expected_finish_time + interval(phase));
-            response.stop(finish_time);
+            // terminate the response and trial.
+            man_response.process_hit(event_time, EVENT_STOP_TIMER);
         }
 
-        time play(time t, ExpPhase p, int index = 0)
+        time play(time t)
         {
             // Abort any previous sounds playing.
             abort();
@@ -269,6 +277,8 @@ Page test_page
 
             // Set up sound clip.
             playback.device = sound_output_device;
+
+            // Sound is setup in action
             clip.file = stimuli_dir() + "sounds/" + sound + ".wav";
 
             // Update status line on control window. Cleared in done() below.
@@ -294,7 +304,116 @@ Page test_page
         }
     }
 
-    Response response
+    // Handles the responses from the button box
+    Response man_response
+    {
+        bool    is_looking;
+        time    lookstart;
+        time    nolookstart;
+        dur     cumlt;
+        dur     cumnlt;
+        int     nlookaways;
+        int     nlooks;
+
+        on_event:start()
+        {
+            clear();
+            lookstart = event_time;
+            // assume the child is looking.
+            is_looking = true;
+            // Allow only one of the manual responses to be active.
+            attention_response.abort();
+        }
+
+        void clear()
+        {
+            is_looking  = true;
+            lookstart   = time(0);
+            nolookstart = time(0);
+            cumlt       = 0ms;
+            cumnlt      = 0ms;
+            nlookaways  = 0;
+            nlooks      = 1; // The infant is always looking at the start
+                             // of the trial.
+        }
+
+        void process_hit(time t, int event)
+        {
+            HitType validity = hit(t);
+            
+            if (validity == HIT_VALID) {
+                if (event == EVENT_STOP_LOOKING) { // start abort timer
+                    if (!is_looking)
+                        return; // ignore, because we weren't looking.
+                    is_looking = false;
+                    nolookstart = t;
+                    cumlt += (t - lookstart);
+
+                    abort_trial_timer.start(t + MAX_LOOK_AWAY_DURATION);
+                    control.stop_clock(t);
+                    nlookaways++;
+                }
+                else if (event == EVENT_START_LOOKING) {
+                    if(is_looking)
+                        return; // ignore, because we already were looking.
+                    is_looking = true;
+                    lookstart = t;
+                    cumnlt += (t - nolookstart);
+
+                    control.start_clock(t);
+                    abort_trial_timer.abort();
+                    nlooks++;
+                }
+                else if (event == EVENT_STOP_TIMER) {
+                    // This case aborts 
+                    if (is_looking)
+                        cumlt += (t - lookstart);
+                    else
+                        cumnlt+= (t - nolookstart);
+
+                    // Make sure other hits are invalid.
+                    ignore_remaining_hits();
+                    // stop response for eye_movement
+                    eye_response.stop();
+                    // abort trial
+                    done(CONTINUE);
+                }
+            }
+        }
+    }
+
+    Response attention_response
+    {
+        void process_hit(time t, int event)
+        {
+            HitType validity = hit(t);
+
+            if (validity == HIT_VALID)
+            {
+                if (event == EVENT_START_LOOKING)
+                {
+                    time trialstart = t + ATTEN_STIM_DELAY;
+
+                    time gridon     = layout.start_stimulus(trialstart);
+                    // auditory_stimulus.play(gridon); would cancel chime_up and down
+                    eyetracker.start_tracking(gridon);
+                    man_response.start(gridon);
+                    eye_response.start(gridon);
+                }
+                else if (event == EVENT_STOP_LOOKING)
+                {
+                    //layout.full_abort();
+                    layout.canvas.grid.abort();
+                    eyetracker.abort();
+                    //auditory_stimulus.abort();
+                    man_response.abort();
+                    eye_response.abort();
+                }
+            }
+        }
+    }
+
+    Response eye_response
     {
         bool    looking;        // true while looking
         time    lookstart;      // looking state start time
@@ -306,6 +425,10 @@ Page test_page
         dur     cumlt;          // cumulative looking time (duration)
         dur     cumnlt;         // cumulative not-looking time (duration)
         bool    lookedaway;     // if set, infant looked away too long
+        int     looks;          // num times participant looks at target
+        int     lookaways;      // num times participant looks away from target.
+
+        looking_state  look_state;
 
         void clear()
         {
@@ -317,62 +440,53 @@ Page test_page
             cumlt       = 0ms;
             cumnlt      = 0ms;
             lookedaway  = false;
+            look_state  = STATE_INITIALIZED;
+            looks       = 0;
+            lookaways   = 0;
         }
 
-        void check_gaze(real xeye, real yeye, time t, bool fixend=false)
+        void process_hit(time t, bool looking)
+        {
+            HitType validity = hit(t);
+            if (validity == HIT_VALID) {
+                if (looking) {
+                    if (look_state != STATE_LOOKING)
+                    {
+                        // TODO inc num looks;
+                        look_state = STATE_LOOKING;
+                    }
+                    cumlt += sample_dur;
+                }
+                else {
+                    if (look_state != STATE_LOOKING) {
+                        // TODO inc NUM not lookings
+                        look_state = STATE_NOT_LOOKING;
+                    }
+                    cumnlt += sample_dur;
+                }
+            }
+        }
+
+        void check_gaze(real xeye, real yeye, time t)
         {
             // Passed eye positions are relative to the test window.
-
             // Make eye coordinates relative to canvas.
             xeye -= layout.canvas.x;
             yeye -= layout.canvas.y;
 
-            if (fixend || 
-                    xeye < 0 || xeye >= layout.canvas.width ||
-                    yeye < 0 || yeye >= layout.canvas.height
-                    ) 
+            if (xeye < 0 || xeye >= layout.canvas.width ||
+                yeye < 0 || yeye >= layout.canvas.height
+                ) 
                 looking = false;
             else
                 looking = true;
 
-            // Evaluate looking during the response period.
-            if (looking)
-            {
-                if (lookstart == time(0)) 
-                {
-                    cumnlt += curnlt;	
-                    curnlt = 0ms;
-                    lookstart = t;
-                    nolookstart = time(0);
-                }
-                curlt = t - lookstart;
-            }
-            else
-            {
-                if (nolookstart == time(0)) 
-                {
-                    cumlt += curlt;
-                    curlt = 0ms;
-                    nolookstart = t;
-                    lookstart = time(0);
-                }
-                curnlt = t - nolookstart;				
-
-                if (MAX_LOOKAWAY_DURATION > 0ms && 
-                        curnlt >= MAX_LOOKAWAY_DURATION)
-                {
-                    lookedaway = true;
-                    stop();
-                }
-            }
-        }		
+            process_hit(t, looking);
+        }
 
         on_event:finish()
         {
-            cumlt   += curlt;
-            cumnlt  += curnlt;
             eyetracker.stop_tracking();
-            done(CONTINUE);
         }
     }
 
@@ -382,9 +496,12 @@ Page test_page
     {
         // Just in case; abort presentation if still active.
         layout.reset();
-        etstarted = false;
         sound_playback2.abort();
         auditory_stimulus.abort();
+
+        abort_trial_timer.abort();
+        control.erase_clock();
+        control.hide_speaker_icon(FRONT_SIDE | LEFT_SIDE | RIGHT_SIDE);
 
         signal_target(msgid);   // tell caller we're done
         target = null;
@@ -429,6 +546,7 @@ Page test_page
     // Performs preparatory work required before using this page.
     void setup(ExpPhase p)
     {
+        sample_dur = eyetracker.sampling_period;
         phase = p;
     }
 
@@ -441,16 +559,10 @@ Page test_page
         sound_playback2.abort();
     }
 
-    time action_attention_grabber(time tref)
-    {
-        return layout.start_attention_getter(tref);
-    }
-
     // Starts a trial.
     void action(Object caller,
                 TestItem it,
                 time tref,
-                bool show_attention,
                 int count=-1
                 )
     {
@@ -462,32 +574,33 @@ Page test_page
         tref = prepare_trial_start(tref);
 
         // Reset response data.
-        response.clear();
+        eye_response.clear();
+        man_response.clear();
 
         // Start attention getter in test phase and
         // first trial of familiarization phase.
-        time attenoffset;
-        if (show_attention)
-            attenoffset = layout.start_attention_getter(tref);
-        else 
-            attenoffset = tref;
+
+        layout.start_attention_getter(tref);
+        attention_response.start(tref);
+
+        eyetracker.target_page = this;
 
         // Start visual stimulus at attention getter offet + ATTEN_STIM_DELAY. 
         // Visual stimulus start event procedure will start
         // the audio stimulus and response period.
-        string fn = stimuli_dir() + "images/" + get_next_cboard();
-        if (phase == FAM_PHASE) {
-            layout.canvas.start(attenoffset + ATTEN_STIM_DELAY);
-            layout.canvas.grid.load(fn);
-            layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-        }
-        else {
-            layout.start_stimulus_test(attenoffset + ATTEN_STIM_DELAY);
-            layout.canvas.grid.load(fn);
-            layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-        }
+
+//        layout.start_stimulus(attenoffset + ATTEN_STIM_DELAY);
+//        layout.canvas.grid.load(fn);
+//        layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
+
+        // Enable communication with control window and the clock.
+        control.target = this;
+//        control.reset_clock();
+//        control.begin_clock();
+//        control.start_clock(tref);
         
         // Remember who to signal when the trial is over.
         target = caller;
     }
 }
+

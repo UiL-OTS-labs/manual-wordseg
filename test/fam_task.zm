@@ -13,6 +13,7 @@ import defs;
 import output;
 import test_page;
 import std_etcal_page;
+import hvf_event;
 
 
 //Item types are used to get the cumulative times
@@ -23,6 +24,11 @@ ItemType get_item_type(TestItem[][] items, int n)
 
 Block fam_block
 {
+    on_event:entry()
+    {
+        //Disable button_box during calibration
+        control.button_box.disable_buttons();
+    }
 
     Part calibration
     {
@@ -35,18 +41,32 @@ Block fam_block
     Block familiarization
     {
         TestItem        item;   // current item
-        dur[..]         cumulative_times;
+        dur[..]         eye_cumulative_times;
+        dur[..]         man_cumulative_times;
         int             nth_stim; // must always be 0 (first stim) or 1 second.
 
         on_event:entry()
         {
-            cumulative_times.size = ITEM_SENTINAL;
-            int i = 0;
-            while (i < cumulative_times.size) {
-                cumulative_times[i] = 0ms;
-                i++;
-            }
-            //num_cycles = fam_items[selected_group].size;
+            //Enable the used buttons.
+            control.button_box.disable_buttons();
+            control.button_box.enable_button(
+                    int(BUTTON_LEFT),
+                    EVENT_STOP_LOOKING
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_LOWER),
+                    EVENT_START_ATTENTION
+                    );
+            control.button_box.enable_button(
+                    int(BUTTON_RIGHT),
+                    EVENT_START_LOOKING
+                    );
+
+            eye_cumulative_times.size = ITEM_SENTINAL;
+            man_cumulative_times.size = ITEM_SENTINAL;
+
+            // We run at most 18 cycles or when both types of stimuli are
+            // attended for 45seconds or more(see TransientPart below). 
             num_cycles = 18;
 
             // to 1.4 => new file format eye-tracker.
@@ -75,6 +95,8 @@ Block fam_block
         {
             test_page.cleanup();
 
+            control.button_box.disable_buttons();
+
             eyetracker.abort();
             eyetracker.close_data_file();
             
@@ -90,7 +112,7 @@ Block fam_block
                 // if we already have 45000ms looking time for the current
                 // item select the next stimulus.
                 if (
-                    cumulative_times[get_item_type(fam_items, nth_stim)] >
+                    man_cumulative_times[get_item_type(fam_items, nth_stim)] >
                     45000ms
                     )
                 {
@@ -131,30 +153,12 @@ Block fam_block
                             this,
                             item,
                             reference_time,
-                            present_attention,
                             familiarization.cycle
                             );
             }
 
             on_event:exit()
             {
-                // Add new row to familiarization output table.
-                TestOutput output;
-                output.phase = FAM_PHASE;
-                output.trialnum = familiarization.cycle + 1;
-                output.number = item.number;
-                output.type = item.type;
-                output.cumlt = int(test_page.response.cumlt);
-                output.cumnlt = int(test_page.response.cumnlt);
-                // add looking + not looking time to stimulus, since we 
-                // are interested in how long the infant has been listing.
-                cumulative_times[item.type] +=
-                    (test_page.response.cumlt + test_page.response.cumnlt);
-                output.lookedaway = test_page.response.lookedaway;
-                output.cumlt_s1 = cumulative_times[get_item_type(fam_items, 0)];
-                output.cumlt_s2 = cumulative_times[get_item_type(fam_items, 1)];
-                fam_output_append(output);
-
                 // Add end of trial message.
                 eyetracker.print_to_data_file("trialend " +
                         string(item.number) + " " +
@@ -165,6 +169,38 @@ Block fam_block
                 // Clear eye-tracker status line.
                 eyetracker.send_command("record_status_message ''");
                 nth_stim = (nth_stim + 1) % fam_items[selected_group].size;
+                
+                // Add new row to familiarization output table.
+                TestOutput eoutput;
+                eoutput.phase       = FAM_PHASE;
+                eoutput.trialnum    = familiarization.cycle + 1;
+                eoutput.number      = item.number;
+                eoutput.type        = item.type;
+                eoutput.cumlt       = int(test_page.eye_response.cumlt);
+                eoutput.cumnlt      = int(test_page.eye_response.cumnlt);
+                // add looking + not looking time to stimulus, since we 
+                // are interested in how long the infant has been listing.
+                eye_cumulative_times[item.type] +=
+                    (test_page.eye_response.cumlt + test_page.eye_response.cumnlt);
+                eoutput.lookedaway  = test_page.eye_response.lookedaway;
+                eoutput.cumlt_s1    = eye_cumulative_times[get_item_type(fam_items, 0)];
+                eoutput.cumlt_s2    = eye_cumulative_times[get_item_type(fam_items, 1)];
+                output_append(fam_eye_output, eoutput);
+
+                TestOutput moutput;
+                moutput.phase       = FAM_PHASE;
+                moutput.trialnum    = familiarization.cycle + 1;
+                moutput.number      = item.number;
+                moutput.type        = item.type;
+                moutput.cumlt       = int(test_page.man_response.cumlt);
+                moutput.cumnlt      = int(test_page.man_response.cumnlt);
+                man_cumulative_times[item.type] += (
+                    test_page.man_response.cumlt +
+                    test_page.man_response.cumnlt
+                    );
+                moutput.cumlt_s1 = man_cumulative_times[get_item_type(fam_items, 0)];
+                moutput.cumlt_s2 = man_cumulative_times[get_item_type(fam_items, 1)];
+                output_append(fam_man_output, moutput);
             }
         }
 
@@ -177,8 +213,8 @@ Block fam_block
                 bool s1_gt_45;
                 bool s2_gt_45;
                 bool finished;
-                s1_gt_45 = cumulative_times[get_item_type(fam_items, 0)] > 45s;
-                s2_gt_45 = cumulative_times[get_item_type(fam_items, 1)] > 45s;
+                s1_gt_45 = man_cumulative_times[get_item_type(fam_items, 0)] > 45s;
+                s2_gt_45 = man_cumulative_times[get_item_type(fam_items, 1)] > 45s;
                 finished = s1_gt_45 && s2_gt_45;
                 if (finished)
                     familiarization.num_cycles = familiarization.cycle;

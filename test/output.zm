@@ -38,19 +38,21 @@ record TestOutput
     dur         cumlt_s2;       // cumulative looking time over trials [ms]
 }
 
-// Familiarization output table
-TestOutput[..] fam_output;
+// Familiarization output table for eyemovement and manual responses
+TestOutput[..] fam_man_output;
+TestOutput[..] fam_eye_output;
 
-// Test phase output table.
-TestOutput[..] test_output;
+// Test phase output table for eyemovement and manual responses.
+TestOutput[..] test_man_output;
+TestOutput[..] test_eye_output;
 
 //------------------------------------------------------------------------------
 
-// Appends one row of data to familiarization phase output table.
-void fam_output_append(TestOutput data)
+// Appends one row of data to a output table.
+void output_append(TestOutput[] output, TestOutput data)
 {
-    fam_output.size = fam_output.size + 1;
-    fam_output[fam_output.size-1] = data;
+    output.size = output.size + 1;
+    output[output.size-1] = data;
 }
 
 
@@ -59,25 +61,25 @@ void fam_output_save()
 {
     // Save output table as CSV file. The filename format is:
     //   <dbname>/<dbnum>/<expname>/ses<sesid>-<tblnum>.csv
-    string fn = expdb.experiment.session.create_table("fam",1);
-    fam_output.save(fn, "Familiarization phase results");
-    fam_output.size = 0;
+    string fn = expdb.experiment.session.create_table("fam_manual",1);
+    fam_man_output.save(fn, "Familiarization phase results eye");
+    fam_man_output.size = 0;
+    
+    fn = expdb.experiment.session.create_table("fam_eye",2);
+    fam_eye_output.save(fn, "Familiarization phase results man");
+    fam_eye_output.size = 0;
 }
-
-// Appends one row of data to test phase output table.
-void test_output_append(TestOutput data)
-{
-    test_output.size = test_output.size + 1;
-    test_output[test_output.size-1] = data;
-}
-
 
 // Saves test phase output table as a CSV file and clears the table.
 void test_output_save()
 {
     // Save output table as CSV file. The filename format is:
     //   <dbname>/<dbnum>/<expname>/ses<sesid>-<tblnum>.csv
-    string fn = expdb.experiment.session.create_table("test", 2);
-    test_output.save(fn, "Test phase results");
-    test_output.size = 0;
+    string fn = expdb.experiment.session.create_table("test_manual", 3);
+    test_man_output.save(fn, "Test phase results");
+    test_man_output.size = 0;
+    
+    fn = expdb.experiment.session.create_table("test_eye", 4);
+    test_eye_output.save(fn, "Test phase results");
+    test_eye_output.size = 0;
 }
