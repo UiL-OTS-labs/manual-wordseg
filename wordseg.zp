@@ -68,6 +68,7 @@ import test::eyetracker_eyelink_infant;
 import test::fam_task;
 import test::test_task;
 
+
 Experiment experiment
 {
     on_event:entry()
@@ -127,6 +128,11 @@ Experiment experiment
         on_event:entry()
         {
             test::fam_action(this);
+        }
+
+        on_event:exit()
+        {
+            experiment.test.reference_time = event_time;
         }
     }
     
