@@ -68,13 +68,16 @@ import test::eyetracker_eyelink_infant;
 import test::fam_task;
 import test::test_task;
 
+
 Experiment experiment
 {
     on_event:entry()
     {
-        bool open;
+        bool open = false;
         show_test_windows();
         if (control.button_box.open(BXY_DEVICE_TYPE_B, "B15017") != OK)
+            open = false;
+        else
             open = true;
 
         if (!open) {
@@ -125,6 +128,11 @@ Experiment experiment
         on_event:entry()
         {
             test::fam_action(this);
+        }
+
+        on_event:exit()
+        {
+            experiment.test.reference_time = event_time;
         }
     }
     
