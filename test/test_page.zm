@@ -194,7 +194,6 @@ Page test_page
 
                 on_event:start()
                 {
-                    println("Grid start");
                     auditory_stimulus.play(now());
                     attention.stop(event_time);
                     last_frame = 0;
