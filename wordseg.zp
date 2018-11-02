@@ -72,9 +72,11 @@ Experiment experiment
 {
     on_event:entry()
     {
-        bool open;
+        bool open = false;
         show_test_windows();
         if (control.button_box.open(BXY_DEVICE_TYPE_B, "B15017") != OK)
+            open = false;
+        else
             open = true;
 
         if (!open) {
