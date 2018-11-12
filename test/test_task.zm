@@ -105,6 +105,8 @@ Block test_block
 
                 bool present_attention = true;
 
+                control.set_current_trial(test.cycle + 1);
+
                 // Start trial.
                 test_page.action(
                         this,
