@@ -148,6 +148,8 @@ Block fam_block
                 //bool present_attention = (familiarization.cycle == 0);
                 bool present_attention = true;
 
+                control.set_current_trial(familiarization.cycle + 1);
+
                 // Start trial.
                 test_page.action(
                             this,
