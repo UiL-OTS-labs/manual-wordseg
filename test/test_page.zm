@@ -149,11 +149,14 @@ Page test_page
                         num_repeats
                         );
                     canvas.fill_pattern_color = ATTENTION_BACK_COLOR;
+                    control.start_attention_grabber_cross();
+                    control.animate_attention_grabber_cross(event_time);
                 }
 
                 on_event:finish()
                 {
                     sound_playback2.abort();
+                    control.clear_attention_grabber_cross();
                 }
             }
             
