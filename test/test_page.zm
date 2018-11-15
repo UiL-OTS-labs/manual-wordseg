@@ -427,8 +427,8 @@ Page test_page
         dur     cumlt;          // cumulative looking time (duration)
         dur     cumnlt;         // cumulative not-looking time (duration)
         bool    lookedaway;     // if set, infant looked away too long
-        int     looks;          // num times participant looks at target
-        int     lookaways;      // num times participant looks away from target.
+        int     nlooks;         // num times participant looks at target
+        int     nlookaways;     // num times participant looks away from target.
 
         looking_state  look_state;
 
@@ -443,8 +443,8 @@ Page test_page
             cumnlt      = 0ms;
             lookedaway  = false;
             look_state  = STATE_INITIALIZED;
-            looks       = 0;
-            lookaways   = 0;
+            nlooks      = 0;
+            nlookaways  = 0;
         }
 
         void process_hit(time t, bool looking)
@@ -452,16 +452,15 @@ Page test_page
             HitType validity = hit(t);
             if (validity == HIT_VALID) {
                 if (looking) {
-                    if (look_state != STATE_LOOKING)
-                    {
-                        // TODO inc num looks;
+                    if (look_state != STATE_LOOKING) {
+                        nlooks++;
                         look_state = STATE_LOOKING;
                     }
                     cumlt += sample_dur;
                 }
                 else {
-                    if (look_state != STATE_LOOKING) {
-                        // TODO inc NUM not lookings
+                    if (look_state != STATE_NOT_LOOKING) {
+                        nlookaways++;
                         look_state = STATE_NOT_LOOKING;
                     }
                     cumnlt += sample_dur;
