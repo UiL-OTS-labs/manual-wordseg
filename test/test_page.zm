@@ -454,15 +454,14 @@ Page test_page
                 if (looking) {
                     if (look_state != STATE_LOOKING)
                     {
-                        looks++;
+                        // TODO inc num looks;
                         look_state = STATE_LOOKING;
                     }
                     cumlt += sample_dur;
                 }
                 else {
-                    if (look_state != STATE_NOT_LOOKING)
-                    {
-                        lookaways++;
+                    if (look_state != STATE_LOOKING) {
+                        // TODO inc NUM not lookings
                         look_state = STATE_NOT_LOOKING;
                     }
                     cumnlt += sample_dur;
