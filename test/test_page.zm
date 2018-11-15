@@ -320,6 +320,8 @@ Page test_page
         {
             HitType validity = hit(t);
             
+            eyetracker.print_to_data_file("response " + get_event_type(event));
+            
             if (validity == HIT_VALID) {
                 if (event == EVENT_STOP_LOOKING) { // start abort timer
                     if (!is_looking)
