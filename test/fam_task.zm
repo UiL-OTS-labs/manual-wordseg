@@ -187,6 +187,8 @@ Block fam_block
                 eoutput.lookedaway  = test_page.eye_response.lookedaway;
                 eoutput.cumlt_s1    = eye_cumulative_times[get_item_type(fam_items, 0)];
                 eoutput.cumlt_s2    = eye_cumulative_times[get_item_type(fam_items, 1)];
+                eoutput.nlooks      = test_page.eye_response.nlooks;
+                eoutput.nlookaways  = test_page.eye_response.nlookaways;
                 output_append(fam_eye_output, eoutput);
 
                 TestOutput moutput;
@@ -202,6 +204,8 @@ Block fam_block
                     );
                 moutput.cumlt_s1 = man_cumulative_times[get_item_type(fam_items, 0)];
                 moutput.cumlt_s2 = man_cumulative_times[get_item_type(fam_items, 1)];
+                moutput.nlooks      = test_page.man_response.nlooks;
+                moutput.nlookaways  = test_page.man_response.nlookaways;
                 output_append(fam_man_output, moutput);
             }
         }

@@ -138,15 +138,21 @@ Block test_block
                 eoutput.cumlt        = int(test_page.eye_response.cumlt);
                 eoutput.cumnlt       = int(test_page.eye_response.cumnlt);
                 eoutput.lookedaway   = test_page.eye_response.lookedaway;
+                eoutput.nlooks       = test_page.eye_response.nlooks;
+                eoutput.nlookaways   = test_page.eye_response.nlookaways;
+
                 output_append(test_eye_output, eoutput);
                 
                 TestOutput moutput;
-                moutput.phase       = FAM_PHASE;
-                moutput.trialnum    = test.cycle + 1;
-                moutput.number      = item.number;
-                moutput.type        = item.type;
-                moutput.cumlt       = int(test_page.man_response.cumlt);
-                moutput.cumnlt      = int(test_page.man_response.cumnlt);
+                moutput.phase        = FAM_PHASE;
+                moutput.trialnum     = test.cycle + 1;
+                moutput.number       = item.number;
+                moutput.type         = item.type;
+                moutput.cumlt        = int(test_page.man_response.cumlt);
+                moutput.cumnlt       = int(test_page.man_response.cumnlt);
+                moutput.nlooks       = test_page.man_response.nlooks;
+                moutput.nlookaways   = test_page.man_response.nlookaways;
+
                 output_append(test_man_output, moutput);
             }
         }
