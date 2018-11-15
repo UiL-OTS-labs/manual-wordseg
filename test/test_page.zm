@@ -48,29 +48,6 @@ Page test_page
         }
     }
 
-// Remove
-//
-//    // If the looking button is pressed this timer is activated from the
-//    // attention response. This timer can be canceled when the child
-//    // looks away to fast, also from the attention_response.
-//    Timer start_trial_timer
-//    {
-//        on_event:expire()
-//        {
-//            attention_response.abort();
-//
-//            time tref = layout.start_stimulus(expire_time + 16.667ms);
-//            sound_playback2.abort();
-//            auditory_stimulus.start(tref);
-//            
-//            // start eye tracker
-//            eyetracker.target = test_page;
-//            eyetracker.start_tracking();
-//
-//        }
-//    }
-
-
     init()
     {
         fill_pattern_color = TEST_PAGE_COLOR;
