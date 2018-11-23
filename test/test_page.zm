@@ -33,9 +33,7 @@ Page test_page
 {
     TestItem    item;           // trial control parameters
     string      sound;          // current sound file stub
-    int         next = 0;       // next familiarization image
     ExpPhase    phase;          // Indicates in which phase we are.
-    //bool        etstarted;      // whether or not eye-tracking has started
     dur         sample_dur;     // Duration of a sample
 
     // Pressing the left button on the button box starts this timer
@@ -565,19 +563,8 @@ Page test_page
 
         eyetracker.target_page = this;
 
-        // Start visual stimulus at attention getter offet + ATTEN_STIM_DELAY. 
-        // Visual stimulus start event procedure will start
-        // the audio stimulus and response period.
-
-//        layout.start_stimulus(attenoffset + ATTEN_STIM_DELAY);
-//        layout.canvas.grid.load(fn);
-//        layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-
         // Enable communication with control window and the clock.
         control.target = this;
-//        control.reset_clock();
-//        control.begin_clock();
-//        control.start_clock(tref);
         
         // Remember who to signal when the trial is over.
         target = caller;
