@@ -36,6 +36,9 @@ record TestOutput
 
     dur         cumlt_s1;       // cumulative looking time over trials [ms]
     dur         cumlt_s2;       // cumulative looking time over trials [ms]
+
+    int         nlooks;         // Number of looks on target
+    int         nlookaways;     // Number of times the child looked away
 }
 
 // Familiarization output table for eyemovement and manual responses

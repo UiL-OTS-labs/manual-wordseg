@@ -33,3 +33,24 @@ const int EVENT_START_ATTENTION = 5;    // starts the attention grabber.
 const int EVENT_STOP            = 6;    // used to finalize looking time in
                                         // familiarization phase.
 
+string
+get_event_type(int event) {
+    if (event == EVENT_START_LOOKING)
+        return "EVENT_START_LOOKING";
+    else if(event == EVENT_STOP_LOOKING)
+        return "EVENT_STOP_LOOKING";
+    else if (event == EVENT_AUDIO_START)
+        return "EVENT_AUDIO_START";
+    else if (event == EVENT_AUDIO_FINISH)
+        return "EVENT_AUDIO_FINISH";
+    else if (event == EVENT_STOP_TIMER)
+        return "EVENT_STOP_TIMER";
+    else if (event == EVENT_STOP_TIMER)
+        return "EVENT_STOP_TIMER";
+    else if (event == EVENT_START_ATTENTION)
+        return "EVENT_START_ATTENTION";
+    else if (event == EVENT_STOP)
+        return "EVENT_STOP";
+        
+    return "Oops unknown event.";
+}

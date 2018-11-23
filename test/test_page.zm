@@ -33,9 +33,7 @@ Page test_page
 {
     TestItem    item;           // trial control parameters
     string      sound;          // current sound file stub
-    int         next = 0;       // next familiarization image
     ExpPhase    phase;          // Indicates in which phase we are.
-    //bool        etstarted;      // whether or not eye-tracking has started
     dur         sample_dur;     // Duration of a sample
 
     // Pressing the left button on the button box starts this timer
@@ -47,29 +45,6 @@ Page test_page
             man_response.process_hit(event_time, EVENT_STOP_TIMER);
         }
     }
-
-// Remove
-//
-//    // If the looking button is pressed this timer is activated from the
-//    // attention response. This timer can be canceled when the child
-//    // looks away to fast, also from the attention_response.
-//    Timer start_trial_timer
-//    {
-//        on_event:expire()
-//        {
-//            attention_response.abort();
-//
-//            time tref = layout.start_stimulus(expire_time + 16.667ms);
-//            sound_playback2.abort();
-//            auditory_stimulus.start(tref);
-//            
-//            // start eye tracker
-//            eyetracker.target = test_page;
-//            eyetracker.start_tracking();
-//
-//        }
-//    }
-
 
     init()
     {
@@ -343,6 +318,8 @@ Page test_page
         {
             HitType validity = hit(t);
             
+            eyetracker.print_to_data_file("response " + get_event_type(event));
+            
             if (validity == HIT_VALID) {
                 if (event == EVENT_STOP_LOOKING) { // start abort timer
                     if (!is_looking)
@@ -401,15 +378,17 @@ Page test_page
                     eyetracker.start_tracking(gridon);
                     man_response.start(gridon);
                     eye_response.start(gridon);
+                    ignore_remaining_hits();
                 }
                 else if (event == EVENT_STOP_LOOKING)
                 {
-                    //layout.full_abort();
-                    layout.canvas.grid.abort();
-                    eyetracker.abort();
-                    //auditory_stimulus.abort();
-                    man_response.abort();
-                    eye_response.abort();
+                    //Do not abort any thing at the moment.
+//                    //layout.full_abort();
+//                    layout.canvas.grid.abort();
+//                    eyetracker.abort();
+//                    //auditory_stimulus.abort();
+//                    man_response.abort();
+//                    eye_response.abort();
                 }
             }
         }
@@ -427,8 +406,8 @@ Page test_page
         dur     cumlt;          // cumulative looking time (duration)
         dur     cumnlt;         // cumulative not-looking time (duration)
         bool    lookedaway;     // if set, infant looked away too long
-        int     looks;          // num times participant looks at target
-        int     lookaways;      // num times participant looks away from target.
+        int     nlooks;         // num times participant looks at target
+        int     nlookaways;     // num times participant looks away from target.
 
         looking_state  look_state;
 
@@ -443,8 +422,8 @@ Page test_page
             cumnlt      = 0ms;
             lookedaway  = false;
             look_state  = STATE_INITIALIZED;
-            looks       = 0;
-            lookaways   = 0;
+            nlooks      = 0;
+            nlookaways  = 0;
         }
 
         void process_hit(time t, bool looking)
@@ -452,16 +431,15 @@ Page test_page
             HitType validity = hit(t);
             if (validity == HIT_VALID) {
                 if (looking) {
-                    if (look_state != STATE_LOOKING)
-                    {
-                        // TODO inc num looks;
+                    if (look_state != STATE_LOOKING) {
+                        nlooks++;
                         look_state = STATE_LOOKING;
                     }
                     cumlt += sample_dur;
                 }
                 else {
-                    if (look_state != STATE_LOOKING) {
-                        // TODO inc NUM not lookings
+                    if (look_state != STATE_NOT_LOOKING) {
+                        nlookaways++;
                         look_state = STATE_NOT_LOOKING;
                     }
                     cumnlt += sample_dur;
@@ -587,19 +565,8 @@ Page test_page
 
         eyetracker.target_page = this;
 
-        // Start visual stimulus at attention getter offet + ATTEN_STIM_DELAY. 
-        // Visual stimulus start event procedure will start
-        // the audio stimulus and response period.
-
-//        layout.start_stimulus(attenoffset + ATTEN_STIM_DELAY);
-//        layout.canvas.grid.load(fn);
-//        layout.canvas.grid.start(attenoffset + ATTEN_STIM_DELAY);
-
         // Enable communication with control window and the clock.
         control.target = this;
-//        control.reset_clock();
-//        control.begin_clock();
-//        control.start_clock(tref);
         
         // Remember who to signal when the trial is over.
         target = caller;
