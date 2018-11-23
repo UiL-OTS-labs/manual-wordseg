@@ -378,15 +378,17 @@ Page test_page
                     eyetracker.start_tracking(gridon);
                     man_response.start(gridon);
                     eye_response.start(gridon);
+                    ignore_remaining_hits();
                 }
                 else if (event == EVENT_STOP_LOOKING)
                 {
-                    //layout.full_abort();
-                    layout.canvas.grid.abort();
-                    eyetracker.abort();
-                    //auditory_stimulus.abort();
-                    man_response.abort();
-                    eye_response.abort();
+                    //Do not abort any thing at the moment.
+//                    //layout.full_abort();
+//                    layout.canvas.grid.abort();
+//                    eyetracker.abort();
+//                    //auditory_stimulus.abort();
+//                    man_response.abort();
+//                    eye_response.abort();
                 }
             }
         }
