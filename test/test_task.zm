@@ -46,7 +46,7 @@ Block test_block
             int listnum = selected_group + 1;
             int recordingnum = 0;
             string edfname = 
-                format(expdb.experiment.session.id, 4) + "_" + 
+                format(expdb.experiment.session.id, 4) + "_test_" + 
                 format(listnum, 2) + "_" + 
                 format(recordingnum, 2);
 
